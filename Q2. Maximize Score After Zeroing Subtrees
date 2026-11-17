@@ -1,0 +1,73 @@
+
+class Solution {
+    public int maxScore(int[] parent, int[] op, int[] score) {
+
+        int n = parent.length;
+
+        int[] head = new int[n];
+        int[] next = new int[n];
+
+        java.util.Arrays.fill(head, -1);
+
+        for (int i = 1; i < n; i++) {
+            int p = parent[i];
+            next[i] = head[p];
+            head[p] = i;
+        }
+
+        // Iterative DFS
+        int[] order = new int[n];
+        int[] stack = new int[n];
+
+        int top = 0;
+        int size = 0;
+
+        stack[top++] = 0;
+
+        while (top > 0) {
+            int u = stack[--top];
+            order[size++] = u;
+
+            for (int v = head[u]; v != -1; v = next[v]) {
+                stack[top++] = v;
+            }
+        }
+
+        // Bottom-up DP
+        long[] dp = new long[n];
+
+        for (int i = size - 1; i >= 0; i--) {
+
+            int u = order[i];
+
+            long sum = 0;
+            long minChild = Long.MAX_VALUE;
+
+            boolean isLeaf = true;
+
+            for (int v = head[u]; v != -1; v = next[v]) {
+                isLeaf = false;
+
+                sum += dp[v];
+                minChild = Math.min(minChild, dp[v]);
+            }
+
+            if (isLeaf) {
+                dp[u] = score[u];
+                continue;
+            }
+
+            long result = score[u] + sum;
+
+            if (op[u] == 1) {
+                result -= minChild;
+            } else {
+                result -= Math.min(0L, minChild);
+            }
+
+            dp[u] = result;
+        }
+
+        return (int) dp[0];
+    }
+}
