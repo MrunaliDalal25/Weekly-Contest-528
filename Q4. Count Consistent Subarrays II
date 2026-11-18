@@ -1,0 +1,131 @@
+
+class Solution {
+
+    public long countConsistent(int[] nums) {
+
+        int n = nums.length;
+
+        int[] log = new int[n + 1];
+
+        for (int i = 2; i <= n; i++) {
+            log[i] = log[i / 2] + 1;
+        }
+
+        int levels = log[n] + 1;
+
+        int[][] st = new int[levels][n];
+
+        for (int i = 0; i < n; i++) {
+            st[0][i] = nums[i];
+        }
+
+        // Build Sparse Table
+        for (int k = 1; k < levels; k++) {
+
+            int len = 1 << k;
+            int half = len >> 1;
+
+            for (int i = 0; i + len <= n; i++) {
+                st[k][i] =
+                    st[k - 1][i] &
+                    st[k - 1][i + half];
+            }
+        }
+
+        // Previous less than or equal
+        int[] prev = new int[n];
+        int[] stack = new int[n];
+
+        int top = -1;
+
+        for (int i = 0; i < n; i++) {
+
+            while (top >= 0 &&
+                   nums[stack[top]] > nums[i]) {
+                top--;
+            }
+
+            prev[i] = top >= 0 ? stack[top] : -1;
+
+            stack[++top] = i;
+        }
+
+        // Next strictly smaller
+        int[] next = new int[n];
+
+        top = -1;
+
+        for (int i = n - 1; i >= 0; i--) {
+
+            while (top >= 0 &&
+                   nums[stack[top]] >= nums[i]) {
+                top--;
+            }
+
+            next[i] = top >= 0 ? stack[top] : n;
+
+            stack[++top] = i;
+        }
+
+        long answer = 0;
+
+        for (int i = 0; i < n; i++) {
+
+            int x = nums[i];
+
+            int L = prev[i] + 1;
+            int R = next[i] - 1;
+
+            // Binary search for left boundary
+            int low = L;
+            int high = i;
+
+            while (low < high) {
+
+                int mid = low + (high - low) / 2;
+
+                if ((rangeAnd(st, log, mid, i) & x) == x) {
+                    high = mid;
+                } else {
+                    low = mid + 1;
+                }
+            }
+
+            int left = low;
+
+            // Binary search for right boundary
+            low = i;
+            high = R;
+
+            while (low < high) {
+
+                int mid = low + (high - low + 1) / 2;
+
+                if ((rangeAnd(st, log, i, mid) & x) == x) {
+                    low = mid;
+                } else {
+                    high = mid - 1;
+                }
+            }
+
+            int right = low;
+
+            answer += (i - left + 1L) * (right - i + 1L);
+        }
+
+        return answer;
+    }
+
+    private int rangeAnd(
+        int[][] st,
+        int[] log,
+        int l,
+        int r
+    ) {
+
+        int k = log[r - l + 1];
+
+        return st[k][l] &
+               st[k][r - (1 << k) + 1];
+    }
+}
